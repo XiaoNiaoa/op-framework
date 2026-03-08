@@ -10,14 +10,14 @@
 
 enum
 {
-    SIGNIN_SUCCESS = 0,
+    SIGNIN_LOGIN_SUCCESS = 0,
     SIGNIN_REGISTER_SUCCESS,
     SIGNIN_INCORRECT_PASSWORD,
     SIGNIN_DATABASE_ERROR,
-    SIGNIN_ALREADY_LOGIN,
+    SIGNIN_ALREADY_LOGGED_IN,
     SIGNIN_LOADING,
     SIGNIN_UNREGISTERED,
-    SIGNIN_ALREADY_EXISTS,
+    SIGNIN_ALREADY_REGISTERED,
     SIGNIN_DATA_LOADED_FINISH
 };
 
@@ -137,7 +137,7 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
             else if(mode == SIGNIN_MODE_REGISTER)
             {
                 if(gs_AccountExist[playerid]) {
-                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_EXISTS);
+                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_REGISTERED);
                     return;
                 }
                 gs_AccountLoading[playerid] = true;
@@ -145,7 +145,7 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
             }
             return;
         }
-        CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_LOGIN);
+        CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_LOGGED_IN);
     }
     return;
 }
@@ -239,7 +239,7 @@ public _OPCore_Player_OnLoginSuccess(playerid, raceCheck)
             );
             mysql_tquery(OPCore_GetMySQLHandle(), query);
 
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_SUCCESS);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOGIN_SUCCESS);
         }
         else
         {

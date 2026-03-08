@@ -65,15 +65,15 @@ public OnPlayerSignIn(playerid, result)
     {
         case SIGNIN_UNREGISTERED: SendClientMessage(playerid, 0x00FF00FF, "您还没有注册，请输入/register 注册");
 
-        case SIGNIN_ALREADY_EXISTS: SendClientMessage(playerid, 0x00FF00FF, "您已注册，请输入/login 登录");
+        case SIGNIN_ALREADY_REGISTERED: SendClientMessage(playerid, 0x00FF00FF, "您已注册，请输入/login 登录");
 
-        case SIGNIN_SUCCESS: SendClientMessage(playerid, 0x00FF00FF, "登录成功！欢迎回来");
+        case SIGNIN_LOGIN_SUCCESS: SendClientMessage(playerid, 0x00FF00FF, "登录成功！欢迎回来");
 
         case SIGNIN_REGISTER_SUCCESS: SendClientMessage(playerid, 0x00FF00FF, "注册成功！欢迎加入服务器");
 
         case SIGNIN_INCORRECT_PASSWORD: SendClientMessage(playerid, 0xFF0000FF, "密码错误，请重新输入");
 
-        case SIGNIN_ALREADY_LOGIN: SendClientMessage(playerid, 0xFFFF00FF, "你已登录，无需重复登录");
+        case SIGNIN_ALREADY_LOGGED_IN: SendClientMessage(playerid, 0xFFFF00FF, "你已登录，无需重复登录");
 
         case SIGNIN_DATA_LOADED_FINISH: SendClientMessage(playerid, 0xFFFF00FF, "数据加载完成");
     }
@@ -87,14 +87,14 @@ public OnPlayerSignIn(playerid, result)
 
 | result | 描述 |
 | :--- | :--- |
-| `SIGNIN_SUCCESS` | 登录成功 |
+| `SIGNIN_LOGIN_SUCCESS` | 登录成功 |
 | `SIGNIN_REGISTER_SUCCESS` | 注册成功 |
 | `SIGNIN_INCORRECT_PASSWORD` | 密码错误或不符合规范 |
 | `SIGNIN_DATABASE_ERROR` | 数据库执行异常 |
-| `SIGNIN_ALREADY_LOGIN` | 已登录过 |
+| `SIGNIN_ALREADY_LOGGED_IN` | 已登录过 |
 | `SIGNIN_LOADING` | 账号数据正在异步加载中 |
 | `SIGNIN_UNREGISTERED` | 账号不存在 |
-| `SIGNIN_ALREADY_EXISTS` | 账号已存在 |
+| `SIGNIN_ALREADY_REGISTERED` | 账号已存在 |
 | `SIGNIN_DATA_LOADED_FINISH` | 玩家数据加载完成 |
 
 ## 函数列表
