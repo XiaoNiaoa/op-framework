@@ -1,11 +1,29 @@
-#define MAX_PASSWORD_ATTEMPT            (5)
-#define MIN_PASSWORD_LENGTH             (4)
-#define MAX_PASSWORD_LENGTH             (16)
+#if !defined MIN_PASSWORD_LENGTH
+    #define MIN_PASSWORD_LENGTH            (4)
+#endif
+
+#if !defined MAX_PASSWORD_LENGTH
+    #define MAX_PASSWORD_LENGTH            (16)
+#endif
+
 #define _INVALID_ACCOUNT_DATABASE_ID    (0)
 
-enum {
-    DIALOG_LOGIN = 1,
-    DIALOG_REGISTER
+enum
+{
+    SIGNIN_SUCCESS = 0,
+    SIGNIN_REGISTER_SUCCESS,
+    SIGNIN_INCORRECT_PASSWORD,
+    SIGNIN_DATABASE_ERROR,
+    SIGNIN_ALREADY_LOGIN,
+    SIGNIN_LOADING,
+    SIGNIN_UNREGISTERED,
+    SIGNIN_ALREADY_EXISTS
+};
+
+// 显式优于隐式
+enum SIGNIN_MODE{
+    SIGNIN_MODE_LOGIN,
+    SIGNIN_MODE_REGISTER
 };
 
 static 
@@ -17,16 +35,29 @@ static
     gs_AccountLeaveDate[MAX_PLAYERS];
 
 static
-    bool:gs_AccountLogged[MAX_PLAYERS] = {false, ...};
-
-static gs_AccountLoginAttempt[MAX_PLAYERS] = {-1, ...};
+    bool:gs_AccountLogged[MAX_PLAYERS] = {false, ...},
+    bool:gs_AccountLoading[MAX_PLAYERS] = {true, ...},
+    bool:gs_AccountExist[MAX_PLAYERS] = {false, ...};
 
 stock bool:OPCore_Player_IsValid(playerid)
 {
     if(!IsPlayerConnected(playerid)) return false;
     if(IsPlayerNPC(playerid)) return false;
-    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == _INVALID_ACCOUNT_DATABASE_ID) return false;
-    return true;
+    return gs_AccountLogged[playerid];
+}
+
+stock bool:OPCore_Player_IsExist(playerid)
+{
+    if(!IsPlayerConnected(playerid)) return false;
+    if(IsPlayerNPC(playerid)) return false;
+    return gs_AccountExist[playerid];
+}
+
+stock bool:OPCore_Player_IsLoading(playerid)
+{
+    if(!IsPlayerConnected(playerid)) return true;
+    if(IsPlayerNPC(playerid)) return true;
+    return gs_AccountLoading[playerid];
 }
 
 stock OPCore_Player_GetDBID(playerid)
@@ -41,7 +72,7 @@ stock OPCore_Player_GetRegisterDate(playerid)
 {
     if(!IsPlayerConnected(playerid)) return 0;
     if(IsPlayerNPC(playerid)) return 0;
-    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == 0) return 0;
+    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == _INVALID_ACCOUNT_DATABASE_ID) return 0;
     return gs_AccountRegisterDate[playerid];
 }
 
@@ -49,7 +80,7 @@ stock OPCore_Player_GetLoginDate(playerid)
 {
     if(!IsPlayerConnected(playerid)) return 0;
     if(IsPlayerNPC(playerid)) return 0;
-    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == 0) return 0;
+    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == _INVALID_ACCOUNT_DATABASE_ID) return 0;
     return gs_AccountLoginDate[playerid];
 }
 
@@ -57,7 +88,7 @@ stock OPCore_Player_GetLeaveDate(playerid)
 {
     if(!IsPlayerConnected(playerid)) return 0;
     if(IsPlayerNPC(playerid)) return 0;
-    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == 0) return 0;
+    if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == _INVALID_ACCOUNT_DATABASE_ID) return 0;
     return gs_AccountLeaveDate[playerid];
 }
 
@@ -69,37 +100,52 @@ static stock bool:_OPCore_Player_IsValidPassword(const password[])
 
     for(new i = 0; password[i] != EOS; ++i) {
         switch(password[i]) {
-            case '0'..'9', 'A'..'Z', 'a'..'z', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')': continue;
+            case '0'..'9', 'A'..'Z', 'a'..'z', '!', '@', '#', '$', '^', '&', '*', '(', ')': continue; // , '%'
             default: return false;
         }
     }
     return true;
 }
 
-stock bool:OPCore_Player_SignIn(playerid)
+stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
 {
     if(!IsPlayerNPC(playerid))
     {
-        if(gs_AccountLogged[playerid] == false || gs_AccountDBID[playerid] == _INVALID_ACCOUNT_DATABASE_ID)
+        if(gs_AccountLoading[playerid] == true)
         {
-            if(gs_AccountLoginAttempt[playerid] == -1)
-            {
-                gs_AccountLoginAttempt[playerid] = 0;
-                
-                GetPlayerName(playerid, gs_AccountName[playerid], MAX_PLAYER_NAME + 1);
-                for(new i; gs_AccountName[playerid][i] != 0; i ++)
-                {
-                    if(gs_AccountName[playerid][i] < 0)
-                        gs_AccountName[playerid][i] += 256;
-                }
-                new query[128];
-                mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT `account_uid`, `account_hash` FROM `account` WHERE `account_name` = '%e' LIMIT 1", gs_AccountName[playerid]);
-                mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_AccoPlayer_CheckExists", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
-                return true;
-            }
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOADING);
+            return;
         }
+        if(gs_AccountLogged[playerid] == false)
+        {
+            if(!_OPCore_Player_IsValidPassword(password))
+            {
+                CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_INCORRECT_PASSWORD);
+                return;
+            }
+            if(mode == SIGNIN_MODE_LOGIN)
+            {
+                if(!gs_AccountExist[playerid]) {
+                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_UNREGISTERED);
+                    return;
+                }
+                gs_AccountLoading[playerid] = true;
+                bcrypt_verify(playerid, "_OPCore_Player_HashCheck", password, gs_AccountHash[playerid], "i", OPCore_GetPlayerMySQLRace(playerid));
+            }
+            else if(mode == SIGNIN_MODE_REGISTER)
+            {
+                if(gs_AccountExist[playerid]) {
+                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_EXISTS);
+                    return;
+                }
+                gs_AccountLoading[playerid] = true;
+                bcrypt_hash(playerid, "_OPCore_Player_HashPassword", password, BCRYPT_COST, "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
+            }
+            return;
+        }
+        CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_LOGIN);
     }
-    return false;
+    return;
 }
 
 forward _OPCore_Player_CheckExists(playerid, raceCheck);
@@ -107,28 +153,65 @@ public _OPCore_Player_CheckExists(playerid, raceCheck)
 {
     if(OPCore_MySQLRaceCheck(playerid, raceCheck)) 
     {
+        gs_AccountLoading[playerid] = false;
         if(cache_num_rows()) 
         {
             cache_get_value_name_int(0, "account_uid", gs_AccountDBID[playerid]);
             cache_get_value_name(0, "account_hash", gs_AccountHash[playerid], BCRYPT_HASH_LENGTH);
-
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, 
-                "登录", 
-                "{FFFFFF}您好, 欢迎回来, 请在下方输入您的密码登录游戏\n温馨提示: 请在60秒之内登录您的账号.", 
-                "登录", "退出"
-            );
+            
+            gs_AccountExist[playerid] = true;
+            return;
         }
         else
         {
-            ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, 
-                "注册", 
-                "{FFFFFF}您好, 请在下方输入密码创建一个账号(使用 %d - %d 个字符).\n温馨提示: 注册后请妥善保管好您的密码.", 
-                "注册", "退出", 
-                MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
-            );
+            gs_AccountExist[playerid] = false;
+            gs_AccountDBID[playerid] = _INVALID_ACCOUNT_DATABASE_ID;
         }
     }
     return;
+}
+
+forward _OPCore_Player_HashPassword(playerid, hashid, raceCheck);
+public _OPCore_Player_HashPassword(playerid, hashid, raceCheck) 
+{
+    if(OPCore_MySQLRaceCheck(playerid, raceCheck))
+    {
+        bcrypt_get_hash(gs_AccountHash[playerid]);
+
+        new curTime = gs_AccountRegisterDate[playerid] = gs_AccountLoginDate[playerid] = gettime();
+
+        new query[512];
+        mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), 
+            "INSERT INTO `account` (`account_name`, `account_hash`, `account_registeron`, `account_logindate`, `account_gameid`) VALUES ('%e', '%e', '%d', '%d', '%d')", 
+            gs_AccountName[playerid], 
+            gs_AccountHash[playerid],
+            curTime,
+            curTime,
+            playerid
+        );
+        mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_Player_OnRegisterSuccess", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));  
+    }
+    return 1;
+}
+
+forward _OPCore_Player_HashCheck(playerid, bool:success, raceCheck);
+public _OPCore_Player_HashCheck(playerid, bool:success, raceCheck)
+{
+    if(OPCore_MySQLRaceCheck(playerid, raceCheck))
+    {
+        if(success == true)
+        {
+            new query[128];
+            mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `account` WHERE `account_uid` = '%d' LIMIT 1", gs_AccountDBID[playerid]);
+            mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_Player_OnLoginSuccess", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
+        }
+        else
+        {
+            gs_AccountLoading[playerid] = false;
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_INCORRECT_PASSWORD);
+        }
+    }
+    return 1;
 }
 
 forward _OPCore_Player_OnLoginSuccess(playerid, raceCheck);
@@ -154,8 +237,13 @@ public _OPCore_Player_OnLoginSuccess(playerid, raceCheck)
             );
             mysql_tquery(OPCore_GetMySQLHandle(), query);
 
-            CallLocalFunction("OnPlayerLoggedIn", "i", playerid);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_SUCCESS);
         }
+        else
+        {
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATABASE_ERROR);
+        }
+        gs_AccountLoading[playerid] = false;
     }
     return 1;
 }
@@ -170,62 +258,13 @@ public _OPCore_Player_OnRegisterSuccess(playerid, raceCheck)
             gs_AccountLogged[playerid] = true;
             gs_AccountDBID[playerid] = insertID;
             gs_AccountLeaveDate[playerid] = 0;
-            CallLocalFunction("OnPlayerLoggedIn", "i", playerid);
-        }
-    }
-    return 1;
-}
-
-forward _OPCore_Player_HashPassword(playerid, hashid, raceCheck);
-public _OPCore_Player_HashPassword(playerid, hashid, raceCheck) 
-{
-    if(OPCore_MySQLRaceCheck(playerid, raceCheck))
-    {
-        bcrypt_get_hash(gs_AccountHash[playerid]);
-
-        new curTime = gs_AccountRegisterDate[playerid] = gs_AccountLoginDate[playerid] = gettime();
-
-        new query[512];
-        mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), 
-            "INSERT INTO `account` (`account_name`, `account_hash`, `account_registeron`, `account_logindate`, `account_gameid`) VALUES ('%e', '%e', '%d', '%d', '%d')", 
-            gs_AccountName[playerid], 
-            gs_AccountHash[playerid],
-            curTime,
-            curTime,
-            playerid
-        );
-        mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_AcPlayer_OnRegisterSuccess", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));  
-    }
-    return 1;
-}
-
-forward _OPCore_Player_HashCheck(playerid, bool:success, raceCheck);
-public _OPCore_Player_HashCheck(playerid, bool:success, raceCheck)
-{
-    if(OPCore_MySQLRaceCheck(playerid, raceCheck))
-    {
-        if(success == true)
-        {
-            new query[128];
-            mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `account` WHERE `account_uid` = '%d' LIMIT 1", gs_AccountDBID[playerid]);
-            mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_Player_OnLoginSuccess", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_REGISTER_SUCCESS);
         }
         else
         {
-            gs_AccountLoginAttempt[playerid] += 1;
-            if(gs_AccountLoginAttempt[playerid] >= MAX_PASSWORD_ATTEMPT)
-            {
-                SendClientMessage(playerid, 0xE74C3CFF, "提示: 您因登录失败次数过多被系统踢出了服务器.");
-                Kick(playerid);
-                return 1;
-            }
-            ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, 
-                "登录", 
-                "{FFFFFF}您好, 欢迎回来, 请在下方输入您的密码登录游戏\n温馨提示: 请在60秒内登录您的账号.\n\n{FF6347}剩余尝试次数: %d", 
-                "登录", "退出",
-                MAX_PASSWORD_ATTEMPT - gs_AccountLoginAttempt[playerid]
-            );
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATABASE_ERROR);
         }
+        gs_AccountLoading[playerid] = false;
     }
     return 1;
 }
@@ -247,7 +286,7 @@ public OnGameModeInit()
 
     new query[64];
     mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "UPDATE `account` SET `account_gameid` = '%d'", INVALID_PLAYER_ID);
-    mysql_tquery(OPCore_GetMySQLHandle(), query);
+    mysql_query(OPCore_GetMySQLHandle(), query, false);
 
     #if defined opc_a_OnGameModeInit
         return opc_a_OnGameModeInit();
@@ -268,8 +307,18 @@ public OnPlayerConnect(playerid)
         gs_AccountLeaveDate[playerid] = 0;
 
         gs_AccountLogged[playerid] = false;
+        gs_AccountExist[playerid] = false;
+        gs_AccountLoading[playerid] = true;
 
-        gs_AccountLoginAttempt[playerid] = -1;
+        GetPlayerName(playerid, gs_AccountName[playerid], MAX_PLAYER_NAME + 1);
+        for(new i; gs_AccountName[playerid][i] != 0; i ++)
+        {
+            if(gs_AccountName[playerid][i] < 0)
+                gs_AccountName[playerid][i] += 256;
+        }
+        new query[128];
+        mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT `account_uid`, `account_hash` FROM `account` WHERE `account_name` = '%e' LIMIT 1", gs_AccountName[playerid]);
+        mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_Player_CheckExists", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
     }
 
     #if defined opc_a_OnPlayerConnect
@@ -283,8 +332,6 @@ public OnPlayerDisconnect(playerid, reason)
 {
     if(!IsPlayerNPC(playerid))
     {
-        gs_AccountLoginAttempt[playerid] = -1;
-
         if(gs_AccountLogged[playerid] == true && gs_AccountDBID[playerid] != _INVALID_ACCOUNT_DATABASE_ID)
         {
             new query[200];
@@ -296,65 +343,13 @@ public OnPlayerDisconnect(playerid, reason)
             );
             mysql_tquery(OPCore_GetMySQLHandle(), query);
         }
+        gs_AccountLoading[playerid] = true;
+        gs_AccountExist[playerid] = false;
+        gs_AccountLogged[playerid] = false;
+        gs_AccountDBID[playerid] = _INVALID_ACCOUNT_DATABASE_ID;
     }
     #if defined opc_a_OnPlayerDisconnect
         return opc_a_OnPlayerDisconnect(playerid, reason);
-    #else
-        return 1;
-    #endif
-}
-
-public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
-{
-    switch(dialogid)
-    {
-        case DIALOG_LOGIN:
-        {
-            if(!response) return Kick(playerid), 0;
-            if(!_OPCore_Player_IsValidPassword(inputtext))
-            {
-                SendClientMessage(playerid, 0xE74C3CFF, "提示: 请确保您的密码没有使用任何禁用的字符, 并且密码长度在 %d - %d 个字符范围.", MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH);
-
-                gs_AccountLoginAttempt[playerid] += 1;
-                if(gs_AccountLoginAttempt[playerid] >= MAX_PASSWORD_ATTEMPT)
-                {
-                    SendClientMessage(playerid, 0xE74C3CFF, "提示: 您因登录失败次数过多被系统踢出了服务器.");
-                    Kick(playerid);
-                    return 1;
-                }
-                ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, 
-                    "登录", 
-                    "{FFFFFF}您好, 欢迎回来, 请在下方输入您的密码登录游戏\n温馨提示: 请在60秒之内登录您的账号.\n\n{FF6347}剩余尝试次数: %d", 
-                    "登录", "退出", 
-                    MAX_PASSWORD_ATTEMPT - gs_AccountLoginAttempt[playerid]
-                );
-                return 0;
-            }
-            else bcrypt_verify(playerid, "_OPCore_Player_HashCheck", inputtext, gs_AccountHash[playerid], "i", OPCore_GetPlayerMySQLRace(playerid));
-            return 0;
-        }
-        case DIALOG_REGISTER:
-        {
-            if(!response) return Kick(playerid), 0;
-            if(!_OPCore_Player_IsValidPassword(inputtext))
-            {
-                SendClientMessage(playerid, 0xE74C3CFF, "提示: 请确保您的密码没有使用任何禁用的字符, 并且密码长度在 %d - %d 个字符范围.", MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH);
-
-                ShowPlayerDialog(playerid, DIALOG_REGISTER, DIALOG_STYLE_PASSWORD, 
-                    "注册", 
-                    "{FFFFFF}您好, 请在下方输入密码创建一个账号(使用 %d - %d 个字符).\n温馨提示: 注册后请妥善保管好您的密码.", 
-                    "注册", "退出", 
-                    MIN_PASSWORD_LENGTH, 
-                    MAX_PASSWORD_LENGTH
-                );
-                return 0;
-            }
-            else bcrypt_hash(playerid, "_OPCore_Player_HashPassword", inputtext, BCRYPT_COST, "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
-            return 0;
-        }
-    }
-    #if defined opc_a_OnDialogResponse
-        return opc_a_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     #else
         return 1;
     #endif
@@ -390,14 +385,4 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     forward opc_a_OnPlayerDisconnect(playerid, reason);
 #endif
 
-#if defined _ALS_OnDialogResponse
-    #undef OnDialogResponse
-#else
-    #define _ALS_OnDialogResponse
-#endif
-#define OnDialogResponse opc_a_OnDialogResponse
-#if defined opc_a_OnDialogResponse
-    forward opc_a_OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]);
-#endif
-
-forward OnPlayerLoggedIn(playerid);
+forward OnPlayerSignIn(playerid, result);

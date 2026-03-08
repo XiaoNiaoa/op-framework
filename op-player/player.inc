@@ -220,7 +220,7 @@ public _OPCore_Player_Create(playerid, race_check)
     return 1;
 }
 
-public OnPlayerLoggedIn(playerid)
+public OnPlayerSignIn(playerid, result)
 {
     if(OPCore_Player_IsValid(playerid))
     {
@@ -228,8 +228,8 @@ public OnPlayerLoggedIn(playerid)
         mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `players` WHERE `player_uid` = '%d' LIMIT 1", OPCore_Player_GetDBID(playerid));
         mysql_tquery(OPCore_GetMySQLHandle(), query, "_OPCore_Player_Load", "ii", playerid, OPCore_GetPlayerMySQLRace(playerid));
     }
-    #if defined opc_player_OnPlayerLoggedIn
-        return opc_player_OnPlayerLoggedIn(playerid);
+    #if defined opc_player_OnPlayerSignIn
+        return opc_player_OnPlayerSignIn(playerid, result);
     #else
         return 1;
     #endif
@@ -409,14 +409,14 @@ stock bool:OPCore_Player_GiveDataInt(playerid, field, value)
     forward opc_player_OnGameModeInit();
 #endif
 
-#if defined _ALS_OnPlayerLoggedIn
-    #undef OnPlayerLoggedIn
+#if defined _ALS_OnPlayerSignIn
+    #undef OnPlayerSignIn
 #else
-    #define _ALS_OnPlayerLoggedIn
+    #define _ALS_OnPlayerSignIn
 #endif
-#define OnPlayerLoggedIn opc_player_OnPlayerLoggedIn
-#if defined opc_player_OnPlayerLoggedIn
-    forward opc_player_OnPlayerLoggedIn(playerid);
+#define OnPlayerSignIn opc_player_OnPlayerSignIn
+#if defined opc_player_OnPlayerSignIn
+    forward opc_player_OnPlayerSignIn(playerid, result);
 #endif
 
 #if defined _ALS_OnPlayerConnect

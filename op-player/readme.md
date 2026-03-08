@@ -13,15 +13,116 @@
    #include <op-framework/op-player>
    ```
 
-## 函数列表
-#### 账号相关
-- **bool:OPCore_Player_IsValid(playerid)**
-  - **描述**：检查玩家是否是有效的用户(已登录/非NPC)。
-  - **参数**：playerid - 玩家 ID。
-  - **返回**：true 如果有效，否则 false。
+## 示例
 
+可根据需求在包含此模块前定义密码长度范围，默认是 4 - 16
+```pawn
+   #define MIN_PASSWORD_LENGTH  4
+   #define MAX_PASSWORD_LENGTH  16
+
+   #include <op-framework/op-player>
+```
+简单通过指令示例
+
+```pawn
+#include <open.mp>
+#include <a_mysql>
+#include <samp_bcrypt>
+#include <foreach>
+#include <Pawn.CMD>
+#include <sscanf2>
+
+#include <op-framework/op-core>
+#include <op-framework/op-player>
+
+CMD:register(playerid, params[])
+{
+    new password[MAX_PASSWORD_LENGTH + 1];
+    if(sscanf(params, "s[16]", password))
+    {
+        SendClientMessage(playerid, 0xFFFFFFFF, "用法: /register [密码]");
+        return 1;
+    }
+    OPCore_Player_SignIn(playerid, password, SIGNIN_MODE_REGISTER);
+    return 1;
+}
+
+CMD:login(playerid, params[])
+{
+    new password[MAX_PASSWORD_LENGTH + 1];
+    if(sscanf(params, "s[16]", password))
+    {
+        SendClientMessage(playerid, 0xFFFFFFFF, "用法: /login [密码]");
+        return 1;
+    }
+    OPCore_Player_SignIn(playerid, password, SIGNIN_MODE_LOGIN);
+    return 1;
+}
+
+public OnPlayerSignIn(playerid, result)
+{
+    switch(result)
+    {
+        case SIGNIN_UNREGISTERED: SendClientMessage(playerid, 0x00FF00FF, "您还没有注册，请输入/register 注册");
+
+        case SIGNIN_ALREADY_EXISTS: SendClientMessage(playerid, 0x00FF00FF, "您已注册，请输入/login 登录");
+
+        case SIGNIN_SUCCESS: SendClientMessage(playerid, 0x00FF00FF, "登录成功！欢迎回来");
+
+        case SIGNIN_REGISTER_SUCCESS: SendClientMessage(playerid, 0x00FF00FF, "注册成功！欢迎加入服务器");
+
+        case SIGNIN_INCORRECT_PASSWORD: SendClientMessage(playerid, 0xFF0000FF, "密码错误，请重新输入");
+
+        case SIGNIN_ALREADY_LOGIN: SendClientMessage(playerid, 0xFFFF00FF, "你已登录，无需重复登录");
+    }
+    return 1;
+}
+```
+
+## 回调以及状态码定义
+
+**OnPlayerSignIn(playerid, result)**
+
+| result | 描述 |
+| :--- | :--- |
+| `SIGNIN_SUCCESS` | 登录成功 |
+| `SIGNIN_REGISTER_SUCCESS` | 注册成功 |
+| `SIGNIN_INCORRECT_PASSWORD` | 密码错误或不符合规范 |
+| `SIGNIN_DATABASE_ERROR` | 数据库执行异常 |
+| `SIGNIN_ALREADY_LOGIN` | 已登录过 |
+| `SIGNIN_LOADING` | 账号数据正在异步加载中 |
+| `SIGNIN_UNREGISTERED` | 账号不存在（登录模式下） |
+| `SIGNIN_ALREADY_EXISTS` | 账号已存在（注册模式下） |
+
+## 函数列表
+
+### 身份校验
+
+- **OPCore_Player_IsValid(playerid)**
+  - **描述**：检查玩家是否有效的登录玩家且非 NPC
+  - **返回**：true 有效 false 无效
+
+- **bool:OPCore_Player_IsExist(playerid)**
+  - **描述**：检查玩家是否存在于数据库中 常用于判断给玩家显示登录窗口或注册窗口
+  - 即便不检测也可以直接使用 OPCore_Player_SignIn 系统会自动判断
+  - **返回**：true 数据库存在该玩家账户 false 不存在
+
+- **bool:OPCore_Player_IsLoading(playerid)**
+  - **描述**：检查玩家账号数据是否正在加载中 - MySQL异步安全
+  - 但实际开发基本用不上，系统有相应的防御机制 以及对应回调的反馈 `OnPlayerSignIn` `SIGNIN_LOADING`
+  - **返回**：true 异步查询进行中 false 异步安全
+
+### 账户操作
+
+- **OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)**
+  - **描述**：启动玩家登录或注册
+  - **参数**：playerid 玩家ID
+  - **参数**：password 密码
+  - **参数**：mode     操作模式 (登录操作 SIGNIN_MODE_LOGIN 或 注册操作 SIGNIN_MODE_REGISTER)
+
+### 账号相关
 - **OPCore_Player_GetDBID(playerid)**
-  - **描述**：获取玩家账号数据库 ID。
+  - **描述**：获取账号数据库唯一标识符 (UID)
   - **参数**：playerid - 玩家 ID。
   - **返回**：账号 ID 或 0 如果无效。
 
@@ -46,7 +147,7 @@
   - **返回**：true 如果启动成功，否则 false。
   - **注意**：内部处理 MySQL 查询和对话框显示, 重复调用不会导致重复登陆
 
-#### 玩家数据相关
+### 玩家数据相关
 - **Float:OPCore_Player_GetDataFloat(playerid, field)**
   - **描述**：获取 FLOAT 类型字段值。
   - **参数**：
@@ -92,7 +193,3 @@
   - **描述**：为 INT 字段增加值，并标记脏位。
   - **参数**：同 Set。
   - **返回**：true 如果成功，否则 false。
-
-
-## 回调
-- **OnPlayerLoggedIn(playerid)**：玩家登录成功后调用
