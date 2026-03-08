@@ -232,7 +232,7 @@ public _OPCore_Player_Load(playerid, race_check)
 
 public OnPlayerSignIn(playerid, result)
 {
-    if(OPCore_Player_IsLoggedIn(playerid))
+    if(OPCore_Player_IsLoggedIn(playerid) && (result == SIGNIN_LOGIN_SUCCESS || result == SIGNIN_REGISTER_SUCCESS))
     {
         new query[64];
         mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `players` WHERE `player_uid` = '%d' LIMIT 1", OPCore_Player_GetDBID(playerid));
