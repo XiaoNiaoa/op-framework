@@ -79,9 +79,17 @@ static stock _OPCore_Player_Default(playerid)
     return 1;
 }
 
+stock bool:OPCore_Player_IsValid(playerid)
+{
+    if(!IsPlayerConnected(playerid)) return false;
+    if(IsPlayerNPC(playerid)) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid)) return false;
+    return gs_PlayerDataLoaded[playerid];
+}
+
 static stock bool:_OPCore_Player_Save(playerid)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false || gs_PlayerDataSaving[playerid] == true)
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false || gs_PlayerDataSaving[playerid] == true)
         return false;
 
     gs_PlayerDataSaving[playerid] = true;
@@ -164,6 +172,25 @@ public _OPCore_Player_OnSave(playerid, race_check, bool:saving)
     return 1;
 }
 
+forward _OPCore_Player_Create(playerid, race_check);
+public _OPCore_Player_Create(playerid, race_check)
+{
+    if(OPCore_MySQLRaceCheck(playerid, race_check))
+    {
+        new insertID = cache_insert_id();
+        if(insertID > 0) {
+            _OPCore_Player_Default(playerid);
+            gs_PlayerDataLoaded[playerid] = true;
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATA_LOADED_FINISH);
+        }
+        else {
+            SendClientMessage(playerid, 0xE74C3CFF, "错误: 出现了罕见的错误, 游戏数据加载失败, 请重新进入游戏.");
+            Kick(playerid);
+        }
+    }
+    return 1;
+}
+
 forward _OPCore_Player_Load(playerid, race_check);
 public _OPCore_Player_Load(playerid, race_check)
 {
@@ -192,6 +219,7 @@ public _OPCore_Player_Load(playerid, race_check)
                 }
             }
             gs_PlayerDataLoaded[playerid] = true;
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATA_LOADED_FINISH);
         }
         else {
             new query[128];
@@ -202,27 +230,9 @@ public _OPCore_Player_Load(playerid, race_check)
     return 1;
 }
 
-forward _OPCore_Player_Create(playerid, race_check);
-public _OPCore_Player_Create(playerid, race_check)
-{
-    if(OPCore_MySQLRaceCheck(playerid, race_check))
-    {
-        new insertID = cache_insert_id();
-        if(insertID > 0) {
-            _OPCore_Player_Default(playerid);
-            gs_PlayerDataLoaded[playerid] = true;
-        }
-        else {
-            SendClientMessage(playerid, 0xE74C3CFF, "错误: 出现了罕见的错误, 游戏数据加载失败, 请重新进入游戏.");
-            Kick(playerid);
-        }
-    }
-    return 1;
-}
-
 public OnPlayerSignIn(playerid, result)
 {
-    if(OPCore_Player_IsValid(playerid))
+    if(OPCore_Player_IsLoggedIn(playerid))
     {
         new query[64];
         mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `players` WHERE `player_uid` = '%d' LIMIT 1", OPCore_Player_GetDBID(playerid));
@@ -311,7 +321,7 @@ public OnPlayerDisconnect(playerid, reason)
 
 stock Float:OPCore_Player_GetDataFloat(playerid, field)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0.0;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0.0;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -320,7 +330,7 @@ stock Float:OPCore_Player_GetDataFloat(playerid, field)
 
 stock OPCore_Player_GetDataInt(playerid, field)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0;
     
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -329,7 +339,7 @@ stock OPCore_Player_GetDataInt(playerid, field)
 
 stock bool:OPCore_Player_GetDataString(playerid, field, string[], size = sizeof(string))
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -340,7 +350,7 @@ stock bool:OPCore_Player_GetDataString(playerid, field, string[], size = sizeof(
 
 stock bool:OPCore_Player_SetDataFloat(playerid, field, Float:value)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -352,7 +362,7 @@ stock bool:OPCore_Player_SetDataFloat(playerid, field, Float:value)
 
 stock bool:OPCore_Player_SetDataInt(playerid, field, value)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -364,7 +374,7 @@ stock bool:OPCore_Player_SetDataInt(playerid, field, value)
 
 stock bool:OPCore_Player_SetDataString(playerid, field, const value[])
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
     
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -376,7 +386,7 @@ stock bool:OPCore_Player_SetDataString(playerid, field, const value[])
 
 stock bool:OPCore_Player_GiveDataFloat(playerid, field, Float:value)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -389,7 +399,7 @@ stock bool:OPCore_Player_GiveDataFloat(playerid, field, Float:value)
 
 stock bool:OPCore_Player_GiveDataInt(playerid, field, value)
 {
-    if(!OPCore_Player_IsValid(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 

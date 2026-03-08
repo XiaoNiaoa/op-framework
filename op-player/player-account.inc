@@ -17,7 +17,8 @@ enum
     SIGNIN_ALREADY_LOGIN,
     SIGNIN_LOADING,
     SIGNIN_UNREGISTERED,
-    SIGNIN_ALREADY_EXISTS
+    SIGNIN_ALREADY_EXISTS,
+    SIGNIN_DATA_LOADED_FINISH
 };
 
 // 显式优于隐式
@@ -36,17 +37,18 @@ static
 
 static
     bool:gs_AccountLogged[MAX_PLAYERS] = {false, ...},
-    bool:gs_AccountLoading[MAX_PLAYERS] = {true, ...},
     bool:gs_AccountExist[MAX_PLAYERS] = {false, ...};
 
-stock bool:OPCore_Player_IsValid(playerid)
+new bool:gs_AccountLoading[MAX_PLAYERS] = {true, ...};
+
+stock bool:OPCore_Player_IsLoggedIn(playerid)
 {
     if(!IsPlayerConnected(playerid)) return false;
     if(IsPlayerNPC(playerid)) return false;
     return gs_AccountLogged[playerid];
 }
 
-stock bool:OPCore_Player_IsExist(playerid)
+stock bool:OPCore_Player_IsRegister(playerid)
 {
     if(!IsPlayerConnected(playerid)) return false;
     if(IsPlayerNPC(playerid)) return false;
@@ -92,7 +94,7 @@ stock OPCore_Player_GetLeaveDate(playerid)
     return gs_AccountLeaveDate[playerid];
 }
 
-static stock bool:_OPCore_Player_IsValidPassword(const password[])
+static stock bool:_IsValidPassword(const password[])
 {
     new len = strlen(password);
     if(len < MIN_PASSWORD_LENGTH || len > MAX_PASSWORD_LENGTH)
@@ -118,7 +120,7 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
         }
         if(gs_AccountLogged[playerid] == false)
         {
-            if(!_OPCore_Player_IsValidPassword(password))
+            if(!_IsValidPassword(password))
             {
                 CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_INCORRECT_PASSWORD);
                 return;

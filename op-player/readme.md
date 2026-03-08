@@ -74,6 +74,8 @@ public OnPlayerSignIn(playerid, result)
         case SIGNIN_INCORRECT_PASSWORD: SendClientMessage(playerid, 0xFF0000FF, "密码错误，请重新输入");
 
         case SIGNIN_ALREADY_LOGIN: SendClientMessage(playerid, 0xFFFF00FF, "你已登录，无需重复登录");
+
+        case SIGNIN_DATA_LOADED_FINISH: SendClientMessage(playerid, 0xFFFF00FF, "数据加载完成");
     }
     return 1;
 }
@@ -91,21 +93,29 @@ public OnPlayerSignIn(playerid, result)
 | `SIGNIN_DATABASE_ERROR` | 数据库执行异常 |
 | `SIGNIN_ALREADY_LOGIN` | 已登录过 |
 | `SIGNIN_LOADING` | 账号数据正在异步加载中 |
-| `SIGNIN_UNREGISTERED` | 账号不存在（登录模式下） |
-| `SIGNIN_ALREADY_EXISTS` | 账号已存在（注册模式下） |
+| `SIGNIN_UNREGISTERED` | 账号不存在 |
+| `SIGNIN_ALREADY_EXISTS` | 账号已存在 |
+| `SIGNIN_DATA_LOADED_FINISH` | 玩家数据加载完成 |
 
 ## 函数列表
 
 ### 身份校验
 
 - **OPCore_Player_IsValid(playerid)**
-  - **描述**：检查玩家是否有效的登录玩家且非 NPC
+  - **描述**：检查玩家是否是有效的玩家 条件是已登录 并且数据已加载 可以进行数据操作
+  - 任何关于玩家有效性的判断应该以此为检测标准 而不是 `OPCore_Player_IsLoggedIn`
+  - `OPCore_Player_IsLoggedIn`只是检测是否登录 可能在登录成功的瞬间 `0.01ms`内数据还没有加载完成 (单线程/异步)
   - **返回**：true 有效 false 无效
 
-- **bool:OPCore_Player_IsExist(playerid)**
-  - **描述**：检查玩家是否存在于数据库中 常用于判断给玩家显示登录窗口或注册窗口
+- **bool:OPCore_Player_IsRegister(playerid)**
+  - **描述**：检查玩家是否存在于数据库中 常用于判断是给玩家显示登录窗口或注册窗口
   - 即便不检测也可以直接使用 OPCore_Player_SignIn 系统会自动判断
   - **返回**：true 数据库存在该玩家账户 false 不存在
+
+- **OPCore_Player_IsLoggedIn(playerid)**
+  - **描述**：检查玩家是否登录 且非 NPC
+  - 此函数在实际开发中用不到，但保留
+  - **返回**：true 已登录 false 未登录
 
 - **bool:OPCore_Player_IsLoading(playerid)**
   - **描述**：检查玩家账号数据是否正在加载中 - MySQL异步安全
