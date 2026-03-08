@@ -111,7 +111,7 @@ static stock bool:_IsValidPassword(const password[])
 
 stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
 {
-    if(!IsPlayerNPC(playerid))
+    if(!IsPlayerNPC(playerid) && IsPlayerConnected(playerid))
     {
         if(gs_AccountLoading[playerid] == true)
         {
