@@ -1,0 +1,4 @@
+*.pwn text working-tree-encoding=gbk 
+*.inc text working-tree-encoding=gbk
+
+* text=auto eol=crlf

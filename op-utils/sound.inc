@@ -17,7 +17,7 @@ stock OPCore_SoundStop(playerid, interval = 0)
 
 stock OPCore_SoundPlay(soundid, Float:range, Float:x, Float:y, Float:z, worldid = 0, ints = 0)
 {
-    // Ô¤±àÒë
+    // é¢„ç¼–è¯‘
     #if defined _Y_ITERATE_LOCAL_VERSION || defined _FOREACH_LOCAL_VERSION
     foreach (new i : Player)
     #else
@@ -32,7 +32,7 @@ stock OPCore_SoundPlay(soundid, Float:range, Float:x, Float:y, Float:z, worldid 
         if((worldid != -1 && GetPlayerVirtualWorld(i) != worldid) || (ints != -1 && GetPlayerInterior(i) != ints)) 
             continue;
 
-        // openmpÄÚ²¿ÊµÏÖ: range >= glm::distance(player.getPosition(), position);
+        // openmpå†…éƒ¨å®žçŽ°: range >= glm::distance(player.getPosition(), position);
         if(IsPlayerInRangeOfPoint(i, range, x, y, z)) 
             PlayerPlaySound(i, soundid, x, y, z);
     }

@@ -3,10 +3,10 @@
 #endif
 #define _INC_OPCORE_RACE
 
-// 依赖环境
+// 渚濊禆鐜
 #if !defined _INC_open_mp
-    #error "请先包含 open.mp"
+    #error "璇峰厛鍖呭惈 open.mp"
 #endif
 
-// 结构
+// 缁撴瀯
 #include <op-framework/op-race/race>

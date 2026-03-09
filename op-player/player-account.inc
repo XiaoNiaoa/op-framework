@@ -22,7 +22,7 @@ enum
     SIGNIN_ALREADY_REGISTERED
 };
 
-// 显式优于隐式
+// 鏄惧紡浼樹簬闅愬紡
 enum SIGNIN_MODE{
     SIGNIN_MODE_LOGIN,
     SIGNIN_MODE_REGISTER
