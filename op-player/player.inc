@@ -1,3 +1,6 @@
+// 优化：保存循环 O(n)，虽然即便上百条玩家数据也几乎可以忽略不计
+// 且实际游戏过程几乎不存在数据无脏位的情况，但可加早检查无脏位
+
 #define MAX_PLAYER_QUERY_LEN 1200
 
 #define PLAYER_FIELD_TYPE_NONE      (0)
@@ -79,17 +82,17 @@ static stock _OPCore_Player_Default(playerid)
     return 1;
 }
 
-stock bool:OPCore_Player_IsValid(playerid)
+stock bool:OPCore_Player_IsLoggedIn(playerid)
 {
     if(!IsPlayerConnected(playerid)) return false;
     if(IsPlayerNPC(playerid)) return false;
-    if(!OPCore_Player_IsLoggedIn(playerid)) return false;
+    if(!gs_AccountLogged[playerid]) return false;
     return gs_PlayerDataLoaded[playerid];
 }
 
-static stock bool:_OPCore_Player_Save(playerid)
+stock bool:OPCore_Player_Save(playerid)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false || gs_PlayerDataSaving[playerid] == true)
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false || gs_PlayerDataSaving[playerid] == true)
         return false;
 
     gs_PlayerDataSaving[playerid] = true;
@@ -168,6 +171,10 @@ public _OPCore_Player_OnSave(playerid, race_check, bool:saving)
             OPCore_Error(Player, "玩家数据保存出现异常 [playerid: %d | name: %s].", playerid, name);
         }
         gs_PlayerDataSaving[playerid] = saving;
+        if(saving == false)
+        {
+            CallLocalFunction("OnPlayerSaved", "i", playerid);
+        }
     }
     return 1;
 }
@@ -181,7 +188,7 @@ public _OPCore_Player_Create(playerid, race_check)
         if(insertID > 0) {
             _OPCore_Player_Default(playerid);
             gs_PlayerDataLoaded[playerid] = true;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATA_LOADED_FINISH);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_REGISTER_SUCCESS);
         }
         else {
             SendClientMessage(playerid, 0xE74C3CFF, "错误: 出现了罕见的错误, 游戏数据加载失败, 请重新进入游戏.");
@@ -219,7 +226,7 @@ public _OPCore_Player_Load(playerid, race_check)
                 }
             }
             gs_PlayerDataLoaded[playerid] = true;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATA_LOADED_FINISH);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOGIN_SUCCESS);
         }
         else {
             new query[128];
@@ -232,7 +239,7 @@ public _OPCore_Player_Load(playerid, race_check)
 
 public OnPlayerSignIn(playerid, result)
 {
-    if(OPCore_Player_IsLoggedIn(playerid) && (result == SIGNIN_LOGIN_SUCCESS || result == SIGNIN_REGISTER_SUCCESS))
+    if(gs_AccountLogged[playerid] && (result == _SIGNIN_LOGIN_SUCCESS || result == _SIGNIN_REGISTER_SUCCESS))
     {
         new query[64];
         mysql_format(OPCore_GetMySQLHandle(), query, sizeof(query), "SELECT * FROM `players` WHERE `player_uid` = '%d' LIMIT 1", OPCore_Player_GetDBID(playerid));
@@ -293,7 +300,7 @@ public OnPlayerConnect(playerid)
 
 public OnPlayerDisconnect(playerid, reason)
 {
-    _OPCore_Player_Save(playerid);
+    OPCore_Player_Save(playerid);
     _OPCore_Player_Default(playerid);
 
     gs_PlayerDataLoaded[playerid] = false;
@@ -321,7 +328,7 @@ public OnPlayerDisconnect(playerid, reason)
 
 stock Float:OPCore_Player_GetDataFloat(playerid, field)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0.0;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return 0.0;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -330,7 +337,7 @@ stock Float:OPCore_Player_GetDataFloat(playerid, field)
 
 stock OPCore_Player_GetDataInt(playerid, field)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return 0;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return 0;
     
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -339,7 +346,7 @@ stock OPCore_Player_GetDataInt(playerid, field)
 
 stock bool:OPCore_Player_GetDataString(playerid, field, string[], size = sizeof(string))
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -348,45 +355,51 @@ stock bool:OPCore_Player_GetDataString(playerid, field, string[], size = sizeof(
     return true;
 }
 
-stock bool:OPCore_Player_SetDataFloat(playerid, field, Float:value)
+stock bool:OPCore_Player_SetDataFloat(playerid, field, Float:value, bool:save = false)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
     gs_PlayerData[playerid][E_PLAYER_DATA:offset] = _:value;
 
     gs_PlayerDataDirty[playerid][field >>> _BITSET_CELL_SHIFT] |= (1 << (field & _BITSET_CELL_MASK));
+
+    if(save) OPCore_Player_Save(playerid);
     return true;
 }
 
-stock bool:OPCore_Player_SetDataInt(playerid, field, value)
+stock bool:OPCore_Player_SetDataInt(playerid, field, value, bool:save = false)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
     gs_PlayerData[playerid][E_PLAYER_DATA:offset] = value;
 
     gs_PlayerDataDirty[playerid][field >>> _BITSET_CELL_SHIFT] |= (1 << (field & _BITSET_CELL_MASK));
+
+    if(save) OPCore_Player_Save(playerid);
     return true;
 }
 
-stock bool:OPCore_Player_SetDataString(playerid, field, const value[])
+stock bool:OPCore_Player_SetDataString(playerid, field, const value[], bool:save = false)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
     
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
     format(gs_PlayerData[playerid][E_PLAYER_DATA:offset], gsc_PlayerFieldData[field][PLAYER_FIELD_SIZE], value);
 
     gs_PlayerDataDirty[playerid][field >>> _BITSET_CELL_SHIFT] |= (1 << (field & _BITSET_CELL_MASK));
+
+    if(save) OPCore_Player_Save(playerid);
     return true;
 }
 
-stock bool:OPCore_Player_GiveDataFloat(playerid, field, Float:value)
+stock bool:OPCore_Player_GiveDataFloat(playerid, field, Float:value, bool:save = false)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
@@ -394,18 +407,22 @@ stock bool:OPCore_Player_GiveDataFloat(playerid, field, Float:value)
     gs_PlayerData[playerid][E_PLAYER_DATA:offset] = _:(currentVal + value);
 
     gs_PlayerDataDirty[playerid][field >>> _BITSET_CELL_SHIFT] |= (1 << (field & _BITSET_CELL_MASK));
+
+    if(save) OPCore_Player_Save(playerid);
     return true;
 }
 
-stock bool:OPCore_Player_GiveDataInt(playerid, field, value)
+stock bool:OPCore_Player_GiveDataInt(playerid, field, value, bool:save = false)
 {
-    if(!OPCore_Player_IsLoggedIn(playerid) || gs_PlayerDataLoaded[playerid] == false) return false;
+    if(!gs_AccountLogged[playerid] || gs_PlayerDataLoaded[playerid] == false) return false;
 
     new offset = gsc_PlayerFieldData[field][PLAYER_FIELD_OFFSET];
 
     gs_PlayerData[playerid][E_PLAYER_DATA:offset] += value;
 
     gs_PlayerDataDirty[playerid][field >>> _BITSET_CELL_SHIFT] |= (1 << (field & _BITSET_CELL_MASK));
+
+    if(save) OPCore_Player_Save(playerid);
     return true;
 }
 
@@ -448,3 +465,5 @@ stock bool:OPCore_Player_GiveDataInt(playerid, field, value)
 #if defined opc_player_OnPlayerDisconnect
     forward opc_player_OnPlayerDisconnect(playerid, reason);
 #endif
+
+forward OnPlayerSaved(playerid);

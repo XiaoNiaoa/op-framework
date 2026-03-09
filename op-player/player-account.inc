@@ -10,15 +10,16 @@
 
 enum
 {
-    SIGNIN_LOGIN_SUCCESS = 0,
+    _SIGNIN_LOGIN_SUCCESS = 0,
+    _SIGNIN_REGISTER_SUCCESS,
+    SIGNIN_LOGIN_SUCCESS,
     SIGNIN_REGISTER_SUCCESS,
     SIGNIN_INCORRECT_PASSWORD,
     SIGNIN_DATABASE_ERROR,
     SIGNIN_ALREADY_LOGGED_IN,
     SIGNIN_LOADING,
     SIGNIN_UNREGISTERED,
-    SIGNIN_ALREADY_REGISTERED,
-    SIGNIN_DATA_LOADED_FINISH
+    SIGNIN_ALREADY_REGISTERED
 };
 
 // 显式优于隐式
@@ -35,18 +36,11 @@ static
     gs_AccountLoginDate[MAX_PLAYERS],
     gs_AccountLeaveDate[MAX_PLAYERS];
 
-static
-    bool:gs_AccountLogged[MAX_PLAYERS] = {false, ...},
-    bool:gs_AccountExist[MAX_PLAYERS] = {false, ...};
+
+new bool:gs_AccountLogged[MAX_PLAYERS] = {false, ...};
+static bool:gs_AccountExist[MAX_PLAYERS] = {false, ...};
 
 new bool:gs_AccountLoading[MAX_PLAYERS] = {true, ...};
-
-stock bool:OPCore_Player_IsLoggedIn(playerid)
-{
-    if(!IsPlayerConnected(playerid)) return false;
-    if(IsPlayerNPC(playerid)) return false;
-    return gs_AccountLogged[playerid];
-}
 
 stock bool:OPCore_Player_IsRegister(playerid)
 {
@@ -239,7 +233,7 @@ public _OPCore_Player_OnLoginSuccess(playerid, raceCheck)
             );
             mysql_tquery(OPCore_GetMySQLHandle(), query);
 
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOGIN_SUCCESS);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, _SIGNIN_LOGIN_SUCCESS);
         }
         else
         {
@@ -260,7 +254,7 @@ public _OPCore_Player_OnRegisterSuccess(playerid, raceCheck)
             gs_AccountLogged[playerid] = true;
             gs_AccountDBID[playerid] = insertID;
             gs_AccountLeaveDate[playerid] = 0;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_REGISTER_SUCCESS);
+            CallLocalFunction("OnPlayerSignIn", "ii", playerid, _SIGNIN_REGISTER_SUCCESS);
         }
         else
         {
