@@ -17,14 +17,24 @@
 #endif
 
 // 结构
+
 #define OPCORE_TEST_DEBUG false
 
+// 工具
 #include <op-framework/op-core/debug>
+#include <op-framework/op-core/fix>
+
+// 共享资源
+#include <op-framework/op-core/share/interiors>
+#include <op-framework/op-core/share/weather>
+#include <op-framework/op-core/share/vehicle-model>
+#include <op-framework/op-core/share/vehicle-name>
+
+// 拓展
+#include <op-framework/op-core/interior>
+
 #include <op-framework/op-core/mysql>
 
 #if !defined OPCORE_DISABLE_DYNAMIC_SERVER_INFO
     #include <op-framework/op-core/server>
 #endif
-
-#include <op-framework/op-core/fix>
-#include <op-framework/op-core/interior>
