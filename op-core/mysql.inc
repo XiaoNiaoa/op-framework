@@ -1,3 +1,25 @@
+
+#if !defined CHAIN_ORDER
+	#define CHAIN_ORDER() 0
+#endif
+
+#define CHAIN_HOOK(%0) forward @CO_%0();public @CO_%0(){return CHAIN_ORDER()+1;}
+#define CHAIN_NEXT(%0) @CO_%0
+
+static stock _OPC_IncludeStates() <_ALS : _ALS_x0, _ALS : _ALS_x1, _ALS : _ALS_x2, _ALS : _ALS_x3> {}
+static stock _OPC_IncludeStates() <_ALS : _ALS_go> {}
+
+#define CHAIN_FORWARD:%0_%2(%1)=%3; \
+	forward %0_%2(%1); \
+	public %0_%2(%1) <_ALS : _ALS_x0, _ALS : _ALS_x1> { return (%3); } \
+	public %0_%2(%1) <> { return (%3); }
+
+#define CHAIN_PUBLIC:%0(%1) %0(%1) <_ALS : _ALS_go>
+
+CHAIN_HOOK(OPC)
+#undef CHAIN_ORDER
+#define CHAIN_ORDER CHAIN_NEXT(OPC)
+
 static MySQL:gs_MySQLHandle;
 
 static gs_MySQLPlayerRace[MAX_PLAYERS];
@@ -45,9 +67,13 @@ public OnQueryError(errorid, const error[], const callback[], const query[], MyS
     return 1;
 }
 
-public OnGameModeInit() 
+public OnGameModeInit()
 {
-    gs_MySQLHandle = mysql_connect_file("mysql.ini");
+	state _ALS : _ALS_go;
+
+    print("op-core");
+
+	gs_MySQLHandle = mysql_connect_file("mysql.ini");
 
     mysql_set_charset("gbk", gs_MySQLHandle);
 
@@ -59,48 +85,63 @@ public OnGameModeInit()
     }
     else OPCore_Debug(MySQL, "数据库连接成功.");
 
-    #if defined opc_mysql_OnGameModeInit
-        return opc_mysql_OnGameModeInit();
-    #else
-        return 1;
-    #endif
+    return OPC_OnGameModeInit();
 }
+#if defined _ALS_OnGameModeInit
+	#undef OnGameModeInit
+#else
+	#define _ALS_OnGameModeInit
+#endif
+#define OnGameModeInit(%0) CHAIN_PUBLIC:OPC_OnGameModeInit(%0)
+CHAIN_FORWARD:OPC_OnGameModeInit() = 1;
+
 
 public OnPlayerConnect(playerid)
 {
     gs_MySQLPlayerRace[playerid]++;
 
-    #if defined opc_mysql_OnPlayerConnect
-        return opc_mysql_OnPlayerConnect(playerid);
-    #else
-        return 1;
-    #endif
+	return OPC_OnPlayerConnect(playerid);
 }
+#if defined _ALS_OnPlayerConnect
+	#undef OnPlayerConnect
+#else
+	#define _ALS_OnPlayerConnect
+#endif
+#define OnPlayerConnect(%0) CHAIN_PUBLIC:OPC_OnPlayerConnect(%0)
+CHAIN_FORWARD:OPC_OnPlayerConnect(playerid) = 1;
 
 public OnPlayerDisconnect(playerid, reason)
 {
+    OPC_OnPlayerDisconnect(playerid, reason);
+
     gs_MySQLPlayerRace[playerid]++;
-
-    #if defined opc_mysql_OnPlayerDisconnect
-        return opc_mysql_OnPlayerDisconnect(playerid, reason);
-    #else
-        return 1;
-    #endif
+    
+	return 1;
 }
+#if defined _ALS_OnPlayerDisconnect
+	#undef OnPlayerDisconnect
+#else
+	#define _ALS_OnPlayerDisconnect
+#endif
+#define OnPlayerDisconnect(%0) CHAIN_PUBLIC:OPC_OnPlayerDisconnect(%0)
+CHAIN_FORWARD:OPC_OnPlayerDisconnect(playerid, reason) = 1;
 
-public OnGameModeExit() 
+public OnGameModeExit()
 {
-    OnMySQLClose();
+	OnMySQLClose();
 
     // mysql_close 函数将始终等待队列中所有查询执行完毕，从而导致服务器停止运行
     mysql_close(gs_MySQLHandle);
 
-    #if defined opc_mysql_OnGameModeExit
-        return opc_mysql_OnGameModeExit();
-    #else
-        return 1;
-    #endif
+	return OPC_OnGameModeExit();
 }
+#if defined _ALS_OnGameModeExit
+	#undef OnGameModeExit
+#else
+	#define _ALS_OnGameModeExit
+#endif
+#define OnGameModeExit(%0) CHAIN_PUBLIC:OPC_OnGameModeExit(%0)
+CHAIN_FORWARD:OPC_OnGameModeExit() = 1;
 
 forward OnMySQLClose();
 public OnMySQLClose()
@@ -111,47 +152,6 @@ public OnMySQLClose()
         return 1;
     #endif
 }
-
-#if defined _ALS_OnGameModeExit
-    #undef OnGameModeExit
-#else
-    #define _ALS_OnGameModeExit
-#endif
-#define OnGameModeExit opc_mysql_OnGameModeExit
-#if defined opc_mysql_OnGameModeExit
-    forward opc_mysql_OnGameModeExit();
-#endif
-
-#if defined _ALS_OnGameModeInit
-    #undef OnGameModeInit
-#else
-    #define _ALS_OnGameModeInit
-#endif
-#define OnGameModeInit opc_mysql_OnGameModeInit
-#if defined opc_mysql_OnGameModeInit
-    forward opc_mysql_OnGameModeInit();
-#endif
-
-#if defined _ALS_OnPlayerConnect
-    #undef OnPlayerConnect
-#else
-    #define _ALS_OnPlayerConnect
-#endif
-#define OnPlayerConnect opc_mysql_OnPlayerConnect
-#if defined opc_mysql_OnPlayerConnect
-    forward opc_mysql_OnPlayerConnect(playerid);
-#endif
-
-#if defined _ALS_OnPlayerDisconnect
-    #undef OnPlayerDisconnect
-#else
-    #define _ALS_OnPlayerDisconnect
-#endif
-#define OnPlayerDisconnect opc_mysql_OnPlayerDisconnect
-#if defined opc_mysql_OnPlayerDisconnect
-    forward opc_mysql_OnPlayerDisconnect(playerid, reason);
-#endif
-
 #if defined _ALS_OnMySQLClose
     #undef OnMySQLClose
 #else
