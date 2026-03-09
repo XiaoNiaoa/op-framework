@@ -27,3 +27,4 @@
 #endif
 
 #include <op-framework/op-core/fix>
+#include <op-framework/op-core/interior>

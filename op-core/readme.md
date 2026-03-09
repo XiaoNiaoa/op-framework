@@ -39,6 +39,22 @@ public _OPCore_Player_Create(playerid, race_check)
 - 异步查询结束使用此函数检查发起查询是否是同一个人
 - 若校验失败将强制踢出玩家以防止数据污染
 
+## interior.inc
+
+包含GTASA所有内饰+隐藏内饰数据，数据来源于单机文件，如体育场、四龙赌场办公室、我记不清了，很久之前人工整理的
+
+**OPCore_GetInteriorDoorPos(OPCORE_INTERIOR:index, &Float:x, &Float:y, &Float:z, &int)**
+
+- 获取内饰的内部门口坐标和内饰id，用于创建内饰出口的 pickup 拾取物
+
+**OPCore_GetInteriorPos(OPCORE_INTERIOR:index, &Float:x, &Float:y, &Float:z, &Float:angle)**
+
+- 获取实际玩家进入之后的坐标和角度，
+
+**OPCore_GotoInterior(playerid, OPCORE_INTERIOR:index, worldid = 0)**
+
+- 传送玩家到某个内饰中，并可以设置虚拟世界ID
+
 ## server.inc
 
 提供服务器基础信息的动态配置功能，并60秒自动刷新一次
