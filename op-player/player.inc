@@ -168,7 +168,7 @@ public _OPCore_Player_OnSave(playerid, race_check, bool:saving)
         {
             new name[MAX_PLAYER_NAME + 1];
             GetPlayerName(playerid, name, MAX_PLAYER_NAME + 1);
-            OPCore_Error(Player, "玩家数据保存出现异常 [playerid: %d | name: %s].", playerid, name);
+            OPCore_Error(Player, "Player 玩家数据保存出现异常 [playerid: %d | name: %s].", playerid, name);
         }
         gs_PlayerDataSaving[playerid] = saving;
         if(saving == false)
@@ -192,6 +192,11 @@ public _OPCore_Player_Create(playerid, race_check)
         }
         else {
             SendClientMessage(playerid, 0xE74C3CFF, "错误: 出现了罕见的错误, 游戏数据加载失败, 请重新进入游戏.");
+
+            new name[MAX_PLAYER_NAME + 1];
+            GetPlayerName(playerid, name, MAX_PLAYER_NAME + 1);
+            OPCore_Error(Player, "Player 玩家数据新增出现异常 [playerid: %d | name: %s].", playerid, name);
+
             Kick(playerid);
         }
     }

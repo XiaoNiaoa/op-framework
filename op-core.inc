@@ -4,6 +4,10 @@
 #define _INC_OPCORE
 
 // 依赖环境
+#if !defined _INC_open_mp
+    #error "请先包含 open.mp"
+#endif
+
 #if !defined mysql_included
     #error "请先包含 a_mysql"
 #endif
@@ -22,5 +26,4 @@
     #include <op-framework/op-core/server>
 #endif
 
-#include <op-framework/op-core/sound>
 #include <op-framework/op-core/fix>

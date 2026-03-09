@@ -12,7 +12,7 @@ static Text:gs_HudRaceBackground[6] = {INVALID_TEXT_DRAW, ...};
 static bool:gs_HudRaceCreated[MAX_PLAYERS] = {false, ...};
 static bool:gs_HudRaceShowing[MAX_PLAYERS] = {false, ...};
 
-stock OPCore_Hud_ShowRaceHud(playerid, rank, totalRacers, mins, seconds, curLap = 0, totalLaps = 0, bool:showLap = false)
+stock OPCore_Hud_ShowRaceHud(playerid, rank, totalRacers, mins, seconds, curLap = 0, totalLaps = 1)
 {
     if(gs_HudRaceCreated[playerid] == false)
     {
@@ -47,7 +47,7 @@ stock OPCore_Hud_ShowRaceHud(playerid, rank, totalRacers, mins, seconds, curLap 
         PlayerTextDrawBackgroundColour(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_TIME], 150);
         PlayerTextDrawFont(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_TIME], TEXT_DRAW_FONT_1);
 
-        if(showLap == true)
+        if(totalLaps > 1)
         {
             gs_HudRaceInfo[playerid][HUD_RACE_INFO_LAP] = CreatePlayerTextDraw(playerid, 559.000, 382.000, "_");
             PlayerTextDrawLetterSize(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_LAP], 0.319, 1.500);
@@ -70,7 +70,7 @@ stock OPCore_Hud_ShowRaceHud(playerid, rank, totalRacers, mins, seconds, curLap 
         PlayerTextDrawShow(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_PLAYERS]);
         PlayerTextDrawShow(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_TIME]);
 
-        if(showLap == true)
+        if(totalLaps > 1)
         {
             for(new i = 3; i < 6; i ++) TextDrawShowForPlayer(playerid, gs_HudRaceBackground[i]);
             PlayerTextDrawShow(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_LAP]);
@@ -86,7 +86,7 @@ stock OPCore_Hud_ShowRaceHud(playerid, rank, totalRacers, mins, seconds, curLap 
         default: PlayerTextDrawSetString(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_PLAYERS], "TH~n~/%d", totalRacers);
     }
     PlayerTextDrawSetString(playerid, gs_HudRaceInfo[playerid][HUD_RACE_INFO_TIME], "%02d:%02d", mins, seconds);
-    if(showLap == true) PlayerTextDrawSetString(playerid, gs_HudRaceInfo[playerid][3], "Lap ~n~%d/%d", curLap, totalLaps);
+    if(totalLaps > 1) PlayerTextDrawSetString(playerid, gs_HudRaceInfo[playerid][3], "Lap ~n~%d/%d", curLap, totalLaps);
     return 1;
 }
 
