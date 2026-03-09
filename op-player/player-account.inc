@@ -109,20 +109,20 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
     {
         if(gs_AccountLoading[playerid] == true)
         {
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOADING);
+            OnPlayerSignIn(playerid, SIGNIN_LOADING);
             return;
         }
         if(gs_AccountLogged[playerid] == false)
         {
             if(!_IsValidPassword(password))
             {
-                CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_INCORRECT_PASSWORD);
+                OnPlayerSignIn(playerid, SIGNIN_INCORRECT_PASSWORD);
                 return;
             }
             if(mode == SIGNIN_MODE_LOGIN)
             {
                 if(!gs_AccountExist[playerid]) {
-                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_UNREGISTERED);
+                    OnPlayerSignIn(playerid, SIGNIN_UNREGISTERED);
                     return;
                 }
                 gs_AccountLoading[playerid] = true;
@@ -131,7 +131,7 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
             else if(mode == SIGNIN_MODE_REGISTER)
             {
                 if(gs_AccountExist[playerid]) {
-                    CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_REGISTERED);
+                    OnPlayerSignIn(playerid, SIGNIN_ALREADY_REGISTERED);
                     return;
                 }
                 gs_AccountLoading[playerid] = true;
@@ -139,7 +139,7 @@ stock void:OPCore_Player_SignIn(playerid, const password[], SIGNIN_MODE:mode)
             }
             return;
         }
-        CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_ALREADY_LOGGED_IN);
+        OnPlayerSignIn(playerid, SIGNIN_ALREADY_LOGGED_IN);
     }
     return;
 }
@@ -204,7 +204,7 @@ public _OPCore_Player_HashCheck(playerid, bool:success, raceCheck)
         else
         {
             gs_AccountLoading[playerid] = false;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_INCORRECT_PASSWORD);
+            OnPlayerSignIn(playerid, SIGNIN_INCORRECT_PASSWORD);
         }
     }
     return 1;
@@ -233,11 +233,11 @@ public _OPCore_Player_OnLoginSuccess(playerid, raceCheck)
             );
             mysql_tquery(OPCore_GetMySQLHandle(), query);
 
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, _SIGNIN_LOGIN_SUCCESS);
+            OnPlayerSignIn(playerid, _SIGNIN_LOGIN_SUCCESS);
         }
         else
         {
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATABASE_ERROR);
+            OnPlayerSignIn(playerid, SIGNIN_DATABASE_ERROR);
         }
         gs_AccountLoading[playerid] = false;
     }
@@ -254,11 +254,11 @@ public _OPCore_Player_OnRegisterSuccess(playerid, raceCheck)
             gs_AccountLogged[playerid] = true;
             gs_AccountDBID[playerid] = insertID;
             gs_AccountLeaveDate[playerid] = 0;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, _SIGNIN_REGISTER_SUCCESS);
+            OnPlayerSignIn(playerid, _SIGNIN_REGISTER_SUCCESS);
         }
         else
         {
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_DATABASE_ERROR);
+            OnPlayerSignIn(playerid, SIGNIN_DATABASE_ERROR);
         }
         gs_AccountLoading[playerid] = false;
     }

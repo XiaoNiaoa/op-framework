@@ -188,7 +188,7 @@ public _OPCore_Player_Create(playerid, race_check)
         if(insertID > 0) {
             _OPCore_Player_Default(playerid);
             gs_PlayerDataLoaded[playerid] = true;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_REGISTER_SUCCESS);
+            OnPlayerSignIn(playerid, SIGNIN_REGISTER_SUCCESS);
         }
         else {
             SendClientMessage(playerid, 0xE74C3CFF, "错误: 出现了罕见的错误, 游戏数据加载失败, 请重新进入游戏.");
@@ -226,7 +226,7 @@ public _OPCore_Player_Load(playerid, race_check)
                 }
             }
             gs_PlayerDataLoaded[playerid] = true;
-            CallLocalFunction("OnPlayerSignIn", "ii", playerid, SIGNIN_LOGIN_SUCCESS);
+            OnPlayerSignIn(playerid, SIGNIN_LOGIN_SUCCESS);
         }
         else {
             new query[128];
