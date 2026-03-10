@@ -1,4 +1,5 @@
-enum VEHICLE_CATEGORY:
+// VEHICLE_CATEGORY:
+enum 
 {
     VEHICLE_CATEGORY_UNKNOWN = -1,
     VEHICLE_CATEGORY_AIRPLANE = 0,
@@ -18,7 +19,7 @@ enum VEHICLE_CATEGORY:
     VEHICLE_CATEGORY_RC_VEHICLES
 };
 
-static const gsc_VehicleCategoryName[][32] = 
+stock const VEHICLE_CATEGORY_NAME[15][32] = 
 {
     "飞机",
     "直升机",
@@ -37,7 +38,7 @@ static const gsc_VehicleCategoryName[][32] =
     "遥控车"
 };
 
-static const VEHICLE_CATEGORY:gsc_VehicleCategory[] = 
+stock const VEHICLE_CATEGORY[] = 
 {
     VEHICLE_CATEGORY_OFF_ROAD,
     VEHICLE_CATEGORY_SALOONS,

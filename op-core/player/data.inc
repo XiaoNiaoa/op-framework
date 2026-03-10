@@ -13,7 +13,7 @@
 #define FIELD_STRING(%0,%1,%2,%3)  %0,
 enum
 {
-    #include <op-framework/op-player/player-data>
+    #include <op-framework/op-core/player/field>
     MAX_PLAYER_FIELDS
 }
 #undef FIELD_INT
@@ -26,7 +26,7 @@ enum
 #define FIELD_STRING(%0,%1,%2,%3)  _%0[%2],
 enum E_PLAYER_DATA
 {
-    #include <op-framework/op-player/player-data>
+    #include <op-framework/op-core/player/field>
 }
 #undef FIELD_INT
 #undef FIELD_FLOAT
@@ -39,7 +39,7 @@ static gs_PlayerData[MAX_PLAYERS][E_PLAYER_DATA];
 #define FIELD_STRING(%0,%1,%2,%3)  %3,
 static const gsc_PlayerDefaultData[E_PLAYER_DATA] = 
 {
-    #include <op-framework/op-player/player-data>
+    #include <op-framework/op-core/player/field>
 };
 #undef FIELD_INT
 #undef FIELD_FLOAT
@@ -60,7 +60,7 @@ enum E_PLAYER_FIELD_DATA
 #define FIELD_STRING(%0,%1,%2,%3)  {%1, %2, PLAYER_FIELD_TYPE_VARCHAR, %2,  _: _%0},
 static const gsc_PlayerFieldData[MAX_PLAYER_FIELDS + 1][E_PLAYER_FIELD_DATA] = 
 {
-    #include <op-framework/op-player/player-data>
+    #include <op-framework/op-core/player/field>
     {"null", "null", PLAYER_FIELD_TYPE_NONE, 0, 0}
 };
 #undef FIELD_INT

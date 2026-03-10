@@ -213,15 +213,3 @@ stock const VEHICLE_NAME[212][24] =
     "Farm Trailer",
     "Utility Trailer"
 };
-
-/*
-stock OPCore_GetVehicleModelFromName(const name[])
-{
-    for(new i = 0; i < 212; i++)
-    {
-        if(strfind(VEHICLE_NAME[i], name, true) != -1)
-            return i + 400;
-    }
-    return INVALID_VEHICLE_MODEL;
-}
-*/

@@ -5,7 +5,7 @@
 
 // 依赖环境
 #if !defined _INC_open_mp
-    #error "请先包含 open.mp"
+    #error 请先包含 open.mp
 #endif
 
 // 结构

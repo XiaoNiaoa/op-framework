@@ -71,8 +71,6 @@ public OnGameModeInit()
 {
 	state _ALS : _ALS_go;
 
-    print("op-core");
-
 	gs_MySQLHandle = mysql_connect_file("mysql.ini");
 
     mysql_set_charset("gbk", gs_MySQLHandle);

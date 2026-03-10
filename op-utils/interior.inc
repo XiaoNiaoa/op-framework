@@ -1,5 +1,3 @@
-
-
 #define MAX_INTERIORS 174
 
 static enum E_INTERIOR_DATA
