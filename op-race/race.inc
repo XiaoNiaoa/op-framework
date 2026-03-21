@@ -48,7 +48,6 @@ static enum E_RACE_DATA
     RACE_COUNTDOWN
 }
 static gs_RaceData[MAX_RACES][E_RACE_DATA];
-static gs_RaceHideHud[MAX_RACES] = {true, ...}; // 是否隐藏HUD 可用于非竞赛环境下的点到点游戏 如任务 巡逻 去除竞赛性质
 
 static stock _OPCore_Race_ResetPlayerData(playerid)
 {
@@ -81,8 +80,6 @@ static stock _OPCore_Race_ResetData(raceid)
     strcat(gs_RaceData[raceid][RACE_BGM_URL], "无", 128);
     gs_RaceData[raceid][RACE_TOTAL_CP] = 0;
     gs_RaceData[raceid][RACE_COUNTDOWN] = 5;
-
-    gs_RaceHideHud[raceid] = true;
 
     for(new j = 0; j < MAX_RACE_CHECKPOINTS; j++)
     {
