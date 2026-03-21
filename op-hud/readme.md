@@ -7,6 +7,9 @@
 ## 示例
 
 ```pawn
+#include <open.mp>
+#include <op-framework/op-hud>
+
 // 在某个比赛中，玩家 A 当前排名第 2，共 10 人参赛，已用时 3 分 45 秒，共 5 圈，当前第 2 圈
 OPCore_Hud_ShowRaceHud(playerid, 2, 10, 3, 45, 2, 5);
 
@@ -52,13 +55,16 @@ stock OPCore_Hud_HideRaceHud(playerid)
 
 用于显示单机样式的统计信息。支持在指定行显示标题和数值
 
-数值支持`数值` `进度条` `时间格式`。模块自动资源，在玩家连接/断开时自动清理资源。
+数值支持`数值` `进度条` `时间格式`。在玩家连接/断开时自动清理资源。
 
 可以显示 5 行 (0 - 4)
 
 ## 示例
 
 ```pawn
+#include <open.mp>
+#include <op-framework/op-hud>
+
 // 数值 (显示100分)
 OPCore_Hud_ShowStats(playerid, 0, "score", 100.0);
 
