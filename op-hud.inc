@@ -10,3 +10,4 @@
 
 // 结构
 #include <op-framework/op-hud/hud-race>
+#include <op-framework/op-hud/hud-stats>
