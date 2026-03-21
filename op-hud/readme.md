@@ -69,10 +69,10 @@ stock OPCore_Hud_HideRaceHud(playerid)
 OPCore_Hud_ShowStats(playerid, 0, "score", 100.0);
 
 // 进度条（显示生命条: 75%）
-OPCore_Hud_ShowStats(playerid, 1, "health", 75.0, 0x00FF00FF, true);
+OPCore_Hud_ShowStats(playerid, 1, "health", 75.0, 0xea5ea0ff, true);
 
 // 时间格式（显示剩余时间: 02:30）
-OPCore_Hud_ShowStats(playerid, 2, "time left", 150.0, 0xFF0000FF, false, true);
+OPCore_Hud_ShowStats(playerid, 2, "time left", 150.0, 0x78b8f4ff, false, true);
 
 // 隐藏第2行统计数据
 OPCore_Hud_HideStats(playerid, 1);
