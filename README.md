@@ -1,2 +1,11 @@
 # OP-Framework
-专为 open.mp 设计的服务器框架，由 XiaoNiao 开发，正在开发中，op-race部分的代码暂时不全
+
+open.mp / SA-MP 轻量服务器框架
+
+社区群：673335567
+
+论坛：https://open-mp.cn/
+
+Bilibili 教程：https://space.bilibili.com/333863887
+
+XiaoNiao（小鸟/小鸟plus） 2026
